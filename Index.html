@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="Css.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapSync</title>
+  
+</head>
+
+<body>
+    <header>
+        <h1>MAP SYNC</h1>
+        <div class="header-container">
+          <p1>Explore the world with MAP SYNC - Your ultimate guide to discovering new places and experiences.</p1>
+      </div>
+    </header>
+  <div class="center-input">
+  <input type="text" id="searchInput" placeholder="Search for a place">
+  <h6></h6>
+  <button onclick="searchPlaces()">Search</button>
+  </div>
+  <div id="map"></div>
+  <div id="resultsContainer"></div>
+
+
+  
+  <script>
+    let map;
+    const mapCenter = { lat: 0, lng: 0 };
+    const mapOptions = {
+      zoom: 4,
+      center: mapCenter
+    };
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), mapOptions);
+    }
+
+    async function searchPlaces() {
+      const searchInput = document.getElementById("searchInput").value.trim();
+      if (searchInput === "") return;
+
+      const placesService = new google.maps.places.PlacesService(map);
+      const request = {
+        query: searchInput,
+        fields: ['name', 'formatted_address', 'geometry']
+      };
+
+      placesService.findPlaceFromQuery(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          const place = results[0];
+          displayPlaceInfo(place);
+          displayPlaceOnMap(place);
+          fetchTouristAttractions(place.geometry.location);
+          fetchHotels(place.geometry.location);
+          fetchRestaurants(place.geometry.location);
+          fetchHospitals(place.geometry.location);
+        } else {
+          console.error("Place search request failed:", status);
+          displayErrorMessage("Failed to search for the place. Please try again.");
+        }
+      });
+    }
+
+    function displayPlaceOnMap(place) {
+      const marker = new google.maps.Marker({
+        map: map,
+        position: place.geometry.location,
+        title: place.name
+      });
+      map.setCenter(place.geometry.location);
+    }
+
+    function displayPlaceInfo(place) {
+      const resultsContainer = document.getElementById("resultsContainer");
+      resultsContainer.innerHTML = `
+        <h2 >${place.name}</h2>
+      
+        <div id="attractions"></div>
+        <div id="hotels"></div>
+        <div id="restaurants"></div>
+        <div id="hospitals"></div>
+      `;
+    }
+
+    function fetchTouristAttractions(location) {
+      const request = {
+        location: location,
+        radius: 5000, 
+        type: 'tourist_attraction'
+      };
+
+      const placesService = new google.maps.places.PlacesService(map);
+      placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          const attractionsContainer = document.getElementById("attractions");
+          attractionsContainer.innerHTML = "<h3>Tourist Attractions</h3>";
+          results.forEach(attraction => {
+            const name = attraction.name;
+            const address = attraction.vicinity;
+            attractionsContainer.innerHTML += `<p><strong>${name}</strong><br>${address}</p>`;
+          });
+        } else {
+          console.error("Failed to fetch tourist attractions:", status);
+          const attractionsContainer = document.getElementById("attractions");
+          attractionsContainer.innerHTML = "<p>No tourist attractions found nearby.</p>";
+        }
+      });
+    }
+
+    function fetchRestaurants(location) {
+  const request = {
+    location: location,
+    radius: 5000, 
+    type: 'restaurant' 
+  };
+
+  const placesService = new google.maps.places.PlacesService(map);
+  placesService.nearbySearch(request, (results, status) => {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      const restaurantsContainer = document.getElementById("restaurants");
+      restaurantsContainer.innerHTML = "<h3 >Restaurants</h3>";
+      results.forEach(restaurant => {
+        const name = restaurant.name; 
+        const address = restaurant.vicinity; 
+        restaurantsContainer.innerHTML += `<p ><strong>${name}</strong><br>${address}</p>`; 
+      });
+    } else {
+      console.error("Failed to fetch restaurants:", status);
+      const restaurantsContainer = document.getElementById("restaurants");
+      restaurantsContainer.innerHTML = "<p>No Restaurants found nearby.</p>"; 
+    }
+  });
+}
+
+function fetchHospitals(location) {
+  const request = {
+    location: location,
+    radius: 5000, // 5000 meters (5 kilometers) radius
+    type: 'hospital' // Specify the type as 'hospital'
+  };
+
+  const placesService = new google.maps.places.PlacesService(map);
+  placesService.nearbySearch(request, (results, status) => {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      const hospitalsContainer = document.getElementById("hospitals");
+      hospitalsContainer.innerHTML = "<h3>Hospitals</h3>";
+      results.forEach(hospital => {
+        const name = hospital.name;
+        const address = hospital.vicinity;
+        hospitalsContainer.innerHTML += `<p><strong>${name}</strong><br>${address}</p>`;
+      });
+    } else {
+      console.error("Failed to fetch hospitals:", status);
+      const hospitalsContainer = document.getElementById("hospitals");
+      hospitalsContainer.innerHTML = "<p>No Hospitals found nearby.</p>";
+    }
+  });
+}
+
+    function fetchHotels(location) {
+      const request = {
+        location: location,
+        radius: 5000, 
+        type: 'lodging'
+      };
+
+      const placesService = new google.maps.places.PlacesService(map);
+      placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          const hotelsContainer = document.getElementById("hotels");
+          hotelsContainer.innerHTML = "<h3>Hotels</h3>";
+          results.forEach(hotel => {
+            const name = hotel.name;
+            const address = hotel.vicinity;
+            hotelsContainer.innerHTML += `<p><strong>${name}</strong><br>${address}</p>`;
+          });
+        } else {
+          console.error("Failed to fetch hotels:", status);
+          const hotelsContainer = document.getElementById("hotels");
+          hotelsContainer.innerHTML = "<p>No hotels found nearby.</p>";
+        }
+      });
+    }
+    
+  
+
+    function displayErrorMessage(message) {
+      const resultsContainer = document.getElementById("resultsContainer");
+      resultsContainer.innerHTML = `<p>${message}</p>`;
+    }
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC-960sgljwWDlzBr1Da2GLyXQtjqfCCFw&libraries=places&callback=initMap" async defer></script>
+</body>
+<!-- Footer -->
+<footer>
+  <div class="footer-container">
+      <p>Welcome to our MapSync platform! We provide real-time map synchronization and search capabilities to help you discover the best attractions and experiences in your destination. Explore, plan, and embark on your next adventure with ease.</p>
+  </div>
+</footer>
+
+</html>
